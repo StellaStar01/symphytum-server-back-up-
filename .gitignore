@@ -3,3 +3,5 @@
 **/out/*.rs
 **/out/*.bin
 *.lock
+**/sniffs
+*.pem

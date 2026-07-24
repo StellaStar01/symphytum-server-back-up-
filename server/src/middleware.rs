@@ -181,6 +181,7 @@ where
     S::Future: Send,
 {
     async fn call(&self, req: Request<Body>, mut service: S) -> Result<Response<Body>, S::Error> {
+        println!("Hello!!!");
         let (parts, body) = req.into_parts();
 
         let collected: http_body_util::Collected<Bytes> = match body.collect().await {
