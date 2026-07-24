@@ -1,0 +1,15 @@
+[package]
+name = "types"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+prost.workspace = true
+prost-protovalidate.workspace = true
+prost-types.workspace = true
+tonic.workspace = true
+tonic-prost.workspace = true
+
+[build-dependencies]
+tonic-prost-build.workspace = true
+prost-protovalidate-build.workspace = true
