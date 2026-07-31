@@ -18,9 +18,16 @@ fn collect_protos(dir: &Path, protos: &mut Vec<PathBuf>) -> std::io::Result<()> 
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    const PROTOBUFS_DIR: &str = "protobufs";
+
     let mut protos = Vec::with_capacity(1024); // as of writing, 596 protos
-    collect_protos(Path::new("protobufs"), &mut protos)?;
+    collect_protos(Path::new(PROTOBUFS_DIR), &mut protos)?;
     // println!("cargo::warning=found {} protos", protos.len());
+
+    println!("cargo::rerun-if-changed={}", PROTOBUFS_DIR);
+    for proto in &protos {
+        println!("cargo::rerun-if-changed={}", proto.display());
+    }
 
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     let descriptor_path = out_dir.join("file_descriptor_set.bin");
@@ -29,7 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build_server(true)
         .build_client(true)
         .file_descriptor_set_path(&descriptor_path)
-        .compile_protos(&protos, &[PathBuf::from("protobufs")])?;
+        .compile_protos(&protos, &[PathBuf::from(PROTOBUFS_DIR)])?;
 
     prost_protovalidate_build::Builder::new()
         .file_descriptor_set_path(&descriptor_path)?

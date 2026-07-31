@@ -1,6 +1,5 @@
 use resource::cert;
 use tonic::{Request, Response, Status};
-use tonic_middleware::MiddlewareLayer;
 // use types::rpc::api::common::{Response as CommonResponse, UserData};
 // use types::rpc::api::user_server::{User, UserServer};
 // use types::rpc::api::{UserDeleteResponse, UserGetResponse};
@@ -10,9 +9,6 @@ use types::rpc::api::system_get_system_info_response::MaintenanceInfo;
 use types::rpc::api::system_get_system_info_response::ReviewInfo;
 use types::rpc::api::system_server::{System, SystemServer};
 use types::rpc::api::{SystemGetSystemInfoRequest, SystemGetSystemInfoResponse};
-
-mod middleware;
-use middleware::QualiCrypt;
 
 mod whateverlol; // delete later, duh
 use whateverlol::welcome;
@@ -92,14 +88,45 @@ impl System for MySystem {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = "127.0.0.1:3000".parse()?;
 
-    println!("gRPC Server listening on {}", addr);
+    #[cfg(debug_assertions)]
+    {
+        tracing_subscriber::fmt()
+            .with_env_filter("debug,tonic_debug=debug")
+            .init();
 
-    tonic::transport::Server::builder()
-        .tls_config(cert::get_tls_config())?
-        .layer(MiddlewareLayer::new(QualiCrypt))
-        .add_service(SystemServer::new(MySystem::default()))
-        .serve(addr)
-        .await?;
+        tracing::info!("serving symphytum on {}", addr);
+
+        let layer = tonic_debug::DebugLayer::new()
+            .log_headers(false)
+            .log_bodies(true);
+
+        tonic::transport::Server::builder()
+            .tls_config(cert::get_tls_config())?
+            .layer(layer)
+            .add_service(SystemServer::new(MySystem::default()))
+            .serve(addr)
+            .await?;
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        tracing_subscriber::fmt()
+            .with_env_filter("info,tonic_debug=info")
+            .init();
+
+        tracing::info!("serving symphytum on {}", addr);
+
+        let layer = tonic_debug::DebugLayer::new()
+            .log_headers(false)
+            .log_bodies(false);
+
+        tonic::transport::Server::builder()
+            .tls_config(cert::get_tls_config())?
+            .layer(layer)
+            .add_service(SystemServer::new(MySystem::default()))
+            .serve(addr)
+            .await?;
+    }
 
     Ok(())
 }

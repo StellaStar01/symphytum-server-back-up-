@@ -4,20 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-aes.workspace = true
-bytes.workspace = true
-cbc.workspace = true
-flate2.workspace = true
-http.workspace = true
-http-body-util.workspace = true
-md-5.workspace = true
-rand.workspace = true
 resource.workspace = true
 tokio.workspace = true
 tonic.workspace = true
-tonic-middleware.workspace = true
-tower.workspace = true
+tonic-debug.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
 types.workspace = true
-futures-util.workspace = true
 serde.workspace = true
 serde_json.workspace = true
