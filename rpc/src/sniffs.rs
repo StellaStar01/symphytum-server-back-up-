@@ -43,14 +43,26 @@ pub const LOGIN_BONUS_CHECK_RESP: &[u8] =
 
 pub const GACHA_LIST_RESP: &[u8] = sniff!("rpc.api.Gacha_List_20260801_135518_631_RESP_0.bin");
 
+pub const EXCHANGE_LIST_GACHA_PICKUP_260728_RESP: &[u8] =
+    sniff!("rpc.api.Exchange_List_20260801_135631_235_RESP_0.bin");
+
+pub const EXCHANGE_LIST_GACHA_COMMON_001_RESP: &[u8] =
+    sniff!("rpc.api.Exchange_List_20260801_135624_780_RESP_0.bin");
+
+pub const EXCHANGE_LIST_GACHA_BEGINNER_SELECT_001_RESP: &[u8] =
+    sniff!("rpc.api.Exchange_List_20260801_135626_007_RESP_0.bin");
+
+pub const EXCHANGE_LIST_MEMBERSHIP_CHR_00001_RESP: &[u8] =
+    sniff!("rpc.api.Exchange_List_20260801_140731_300_RESP_0.bin");
+
 #[cfg(test)]
 mod tests {
     use prost::Message;
     use types::rpc::api::{
-        AuthLoginResponse, EventListEventInfoResponse, GachaListResponse, HomeLoginResponse,
-        LoginBonusCheckResponse, MasterGetResponse, MultiGameListPingServerResponse,
-        NotificationListResponse, ParkEnterResponse, ParkRefreshResponse,
-        StartupNotificationReadMusicResponse, StartupNotificationReadResponse,
+        AuthLoginResponse, EventListEventInfoResponse, ExchangeListResponse, GachaListResponse,
+        HomeLoginResponse, LoginBonusCheckResponse, MasterGetResponse,
+        MultiGameListPingServerResponse, NotificationListResponse, ParkEnterResponse,
+        ParkRefreshResponse, StartupNotificationReadMusicResponse, StartupNotificationReadResponse,
         SystemGetSystemInfoResponse, UserGetResponse,
     };
 
@@ -75,5 +87,9 @@ mod tests {
         );
         assert!(LoginBonusCheckResponse::decode(LOGIN_BONUS_CHECK_RESP).is_ok());
         assert!(GachaListResponse::decode(GACHA_LIST_RESP).is_ok());
+        assert!(ExchangeListResponse::decode(EXCHANGE_LIST_GACHA_PICKUP_260728_RESP).is_ok());
+        assert!(ExchangeListResponse::decode(EXCHANGE_LIST_GACHA_COMMON_001_RESP).is_ok());
+        assert!(ExchangeListResponse::decode(EXCHANGE_LIST_GACHA_BEGINNER_SELECT_001_RESP).is_ok());
+        assert!(ExchangeListResponse::decode(EXCHANGE_LIST_MEMBERSHIP_CHR_00001_RESP).is_ok());
     }
 }

@@ -23,6 +23,7 @@ impl Notification for NotificationService {
         &self,
         _req: Request<NotificationReadRequest>,
     ) -> Result<Response<NotificationReadResponse>, Status> {
-        Err(Status::unimplemented("Notification.read"))
+        // marks the notification read; no user state to update
+        Ok(Response::new(NotificationReadResponse::default()))
     }
 }

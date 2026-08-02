@@ -105,7 +105,7 @@ async fn load_lang_split<T: MasterTable>(short: &str) -> Result<Vec<T>, String> 
     Ok(all)
 }
 
-async fn load<T: MasterTable>() -> Result<Vec<T>, String> {
+pub async fn load<T: MasterTable>() -> Result<Vec<T>, String> {
     let (short, _) = names::<T>();
 
     let path = json_path(short);

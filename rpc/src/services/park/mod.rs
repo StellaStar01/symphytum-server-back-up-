@@ -55,7 +55,8 @@ impl Park for ParkService {
         &self,
         _req: Request<ParkUpdateTimePeriodRequest>,
     ) -> Result<Response<ParkUpdateTimePeriodResponse>, Status> {
-        Err(Status::unimplemented("Park.update_time_period"))
+        // day/night toggle; no user state to persist
+        Ok(Response::new(ParkUpdateTimePeriodResponse::default()))
     }
 
     async fn receive_player_level_reward(

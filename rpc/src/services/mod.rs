@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod event;
+pub mod exchange;
 pub mod gacha;
 pub mod home;
 pub mod login_bonus;

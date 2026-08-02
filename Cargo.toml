@@ -9,6 +9,7 @@ axum = { version = "0.8.9", features = ["multipart"] }
 bytes = "1.12.1"
 http-body = "1.1.0"
 http-body-util = "0.1.4"
+parking_lot = "0.12.5"
 tokio = { version = "1.53.1", features = ["rt", "macros", "net", "time", "fs"] }
 tonic = { version = "0.14.6", features = ["tls-ring"] }
 tonic-debug = "0.3.0"

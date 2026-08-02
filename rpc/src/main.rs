@@ -2,6 +2,7 @@ use tonic::transport::Server;
 
 use types::rpc::api::auth_server::AuthServer;
 use types::rpc::api::event_server::EventServer;
+use types::rpc::api::exchange_server::ExchangeServer;
 use types::rpc::api::gacha_server::GachaServer;
 use types::rpc::api::home_server::HomeServer;
 use types::rpc::api::login_bonus_server::LoginBonusServer;
@@ -18,12 +19,14 @@ use resource::config::{self, CONFIG};
 
 mod services;
 mod sniffs;
+mod user_data;
 
 #[cfg(feature = "quali-crypt")]
 mod quali_crypt;
 
 use services::auth::AuthService;
 use services::event::EventService;
+use services::exchange::ExchangeService;
 use services::gacha::GachaService;
 use services::home::HomeService;
 use services::login_bonus::LoginBonusService;
@@ -66,11 +69,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_service(MultiGameServer::new(MultiGameService::default()))
         .add_service(ParkServer::new(ParkService::default()))
         .add_service(EventServer::new(EventService::default()))
+        .add_service(ExchangeServer::new(ExchangeService::default()))
         .add_service(NotificationServer::new(NotificationService::default()))
         .add_service(StartupNotificationServer::new(
             StartupNotificationService::default(),
         ))
-        .add_service(GachaServer::new(GachaService::default()))
+        .add_service(GachaServer::new(GachaService::init().await?))
         .serve(addr)
         .await?;
 

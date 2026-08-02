@@ -2,6 +2,8 @@
 
 PS for hololive Dreams (very, very work in progress)
 
+current state: everything is hardcoded, but you can get into the game and do some gacha :)
+
 start: `./bin rpc -r`
 
 needs https://github.com/yuvlian/symphytum with this config:
