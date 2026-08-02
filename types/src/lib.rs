@@ -1,5 +1,7 @@
 #![allow(unused_comparisons)]
 
+pub mod reflection;
+
 pub mod common {
     tonic::include_proto!("common");
 }
@@ -56,5 +58,47 @@ pub mod google {
     }
 }
 
-// Include generated validation implementations
 include!(concat!(env!("OUT_DIR"), "/validate_impl.rs"));
+
+#[cfg(test)]
+mod tests {
+    use prost_reflect::Value;
+
+    use crate::reflection::*;
+
+    #[test]
+    fn formats_scalars_and_enum_names() {
+        let desc = DESCRIPTOR_POOL
+            .get_message_by_name("common.Consumption")
+            .unwrap();
+        let mut msg = DynamicMessage::new(desc);
+        msg.set_field_by_name("resource_type", Value::EnumNumber(2)); // RESOURCE_TYPE_CARD
+        msg.set_field_by_name("resource_id", Value::String("card_1".into()));
+        msg.set_field_by_name("quantity", Value::I64(5));
+        assert_eq!(
+            format_message(&msg),
+            "Consumption {\n    resource_type: RESOURCE_TYPE_CARD,\n    resource_id: \"card_1\",\n    quantity: 5,\n}"
+        );
+    }
+
+    #[test]
+    fn keeps_defaults_and_nests_messages() {
+        let desc = DESCRIPTOR_POOL
+            .get_message_by_name("rpc.api.SystemGetSystemInfoResponse")
+            .unwrap();
+        let mut msg = DynamicMessage::new(desc);
+        let review_desc = DESCRIPTOR_POOL
+            .get_message_by_name("rpc.api.SystemGetSystemInfoResponse.ReviewInfo")
+            .unwrap();
+        let mut review = DynamicMessage::new(review_desc);
+        review.set_field_by_name("is_in_review", Value::Bool(true));
+        msg.set_field_by_name("review_info", Value::Message(review));
+        let out = format_message(&msg);
+        assert!(out.starts_with("SystemGetSystemInfoResponse {\n"));
+        assert!(out.contains("    review_info: Some(ReviewInfo {\n"));
+        assert!(out.contains("        is_in_review: true,\n"));
+        assert!(out.contains("        api_host_in_review: \"\",\n"));
+        assert!(out.contains("    maintenance_info: None,\n"));
+        assert!(out.contains("    title_download_gacha_asset_infos: [],\n"));
+    }
+}

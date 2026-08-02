@@ -1,9 +1,12 @@
 use tonic::transport::{Identity, ServerTlsConfig};
 
-const CERT_PEM: &[u8] = include_bytes!("../cert/cert.pem");
-const KEY_PEM: &[u8] = include_bytes!("../cert/key.pem");
+use crate::config::CONFIG;
 
-pub fn get_tls_config() -> ServerTlsConfig {
-    let identity = Identity::from_pem(CERT_PEM, KEY_PEM);
-    ServerTlsConfig::new().identity(identity)
+pub async fn get_tls_config() -> Result<ServerTlsConfig, std::io::Error> {
+    let (cert, key) = tokio::join!(
+        tokio::fs::read(CONFIG.cert_path()),
+        tokio::fs::read(CONFIG.key_path()),
+    );
+    let identity = Identity::from_pem(cert?, key?);
+    Ok(ServerTlsConfig::new().identity(identity))
 }

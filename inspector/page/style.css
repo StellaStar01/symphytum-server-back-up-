@@ -1,0 +1,80 @@
+:root {
+  color-scheme: dark;
+  --bg: #16181d;
+  --fg: #d8dbe2;
+  --panel: #1b1e24;
+  --panel-2: #20242b;
+  --line: #2a2e36;
+  --line-soft: #262a31;
+  --btn-border: #3a3f4a;
+  --btn-hover: #242830;
+  --btn-active-bg: #d8dbe2;
+  --btn-active-fg: #16181d;
+  --meta: #8a8f9a;
+  --dmeta: #6f7683;
+  --code-bg: #131519;
+  --focus: #3d4a63;
+  --badge-req-bg: #3a3320; --badge-req-fg: #d9b45a;
+  --badge-resp-bg: #1f3327; --badge-resp-fg: #7ec98f;
+  --badge-un-bg: #262a31; --badge-un-fg: #9aa0aa;
+  --link: #9aa0aa;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #ffffff;
+  --fg: #1b1b1b;
+  --panel: #ffffff;
+  --panel-2: #f7f7f7;
+  --line: #e3e3e3;
+  --line-soft: #f0f0f0;
+  --btn-border: #cfcfcf;
+  --btn-hover: #f3f3f3;
+  --btn-active-bg: #1b1b1b;
+  --btn-active-fg: #ffffff;
+  --meta: #8a8a8a;
+  --dmeta: #9a9a9a;
+  --code-bg: #fafafa;
+  --focus: #c9d4e4;
+  --badge-req-bg: #f4ecdc; --badge-req-fg: #8a6a1a;
+  --badge-resp-bg: #e5efe6; --badge-resp-fg: #2f6b3a;
+  --badge-un-bg: #efefef; --badge-un-fg: #808080;
+  --link: #666666;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--fg); background: var(--bg); }
+header { position: sticky; top: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; padding: .55rem 1rem; background: var(--panel); border-bottom: 1px solid var(--line); }
+h1 { margin: 0; font-size: 1rem; font-weight: 650; letter-spacing: .02em; }
+.btn, button { font: inherit; font-size: .82rem; padding: .3rem .7rem; color: var(--fg); background: var(--panel); border: 1px solid var(--btn-border); border-radius: 5px; cursor: pointer; }
+.btn:hover, button:hover { background: var(--btn-hover); }
+.btn:active, button:active { background: var(--btn-hover); }
+button:disabled { opacity: .45; cursor: default; }
+button.active { background: var(--btn-active-bg); border-color: var(--btn-active-bg); color: var(--btn-active-fg); }
+button.active:hover { background: var(--btn-active-bg); }
+.upform { display: flex; align-items: center; gap: .5rem; margin: 0; }
+.upform .btn { max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.toolbar { display: flex; align-items: center; gap: .45rem; margin-left: auto; }
+.sep { width: 1px; height: 1.15em; background: var(--line); margin: 0 .1rem; }
+.back { font-size: .82rem; color: var(--link); text-decoration: none; }
+.back:hover { text-decoration: underline; }
+.meta { color: var(--meta); font-size: .78rem; }
+main { max-width: 980px; margin: 1.1rem auto; padding: 0 1rem 2rem; }
+.controls { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; }
+#search { flex: 0 1 320px; font: inherit; font-size: .82rem; padding: .28rem .6rem; color: var(--fg); background: var(--bg); border: 1px solid var(--btn-border); border-radius: 5px; }
+#search:focus { outline: 2px solid var(--focus); outline-offset: -1px; }
+#list { border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+details { border-bottom: 1px solid var(--line-soft); }
+details:last-child { border-bottom: none; }
+summary { display: flex; align-items: baseline; gap: .6rem; padding: .45rem .7rem; cursor: pointer; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary:hover { background: var(--panel-2); }
+.badge { flex: none; width: 38px; text-align: center; font-size: .66rem; font-weight: 700; letter-spacing: .06em; padding: .08rem .38rem; border-radius: 3px; }
+.badge.REQ { background: var(--badge-req-bg); color: var(--badge-req-fg); }
+.badge.RESP { background: var(--badge-resp-bg); color: var(--badge-resp-fg); }
+.badge.un { background: var(--badge-un-bg); color: var(--badge-un-fg); }
+.fname { font-family: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, monospace; font-size: .84rem; color: inherit; text-decoration: none; }
+.fname:hover { text-decoration: underline; }
+.dmeta { margin-left: auto; color: var(--dmeta); font-size: .74rem; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+pre { margin: 0; padding: .7rem .8rem; background: var(--code-bg); border-top: 1px solid var(--line-soft); font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: .8rem; line-height: 1.5; overflow-x: auto; }
+.prefoot { padding: .35rem .8rem; border-top: 1px solid var(--line-soft); }
+.view-link { font-size: .74rem; color: var(--link); text-decoration: none; }
+.view-link:hover { text-decoration: underline; }

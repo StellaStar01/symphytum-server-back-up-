@@ -1,0 +1,30 @@
+<!doctype html>
+<html data-theme="dark"><head><meta charset="utf-8"><script>document.documentElement.dataset.theme = localStorage.getItem('theme') || 'dark';</script><title>sniffs</title>
+<style>{CSS}</style></head>
+<body>
+<header>
+  <h1>sniffs</h1>
+  <form class="upform" action="/upload" method="post" enctype="multipart/form-data">
+    <label class="btn"><input id="file-input" type="file" name="files" multiple hidden><span id="file-label">browse…</span></label>
+    <button type="submit" id="upload-btn" disabled>upload to sniffs/</button>
+  </form>
+  <div class="toolbar">
+    <span class="meta">sort</span>
+    <button id="sort-name">name</button>
+    <button id="sort-time">time</button>
+    <span class="sep"></span>
+    <button id="refresh">refresh</button>
+    <button id="refresh-full" title="re-decode every file (clears cache)">full refresh</button>
+    <span class="sep"></span>
+    <button id="theme" title="toggle dark/light theme">theme: dark</button>
+  </div>
+</header>
+<main>
+  <div class="controls">
+    <span class="meta"><span id="count"></span> files</span>
+    <input id="search" type="search" placeholder="filter by route / message name…" autocomplete="off">
+  </div>
+  <div id="list">{BODY}</div>
+</main>
+<script>{APP_JS}</script>
+</body></html>

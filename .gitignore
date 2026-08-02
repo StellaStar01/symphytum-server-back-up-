@@ -1,7 +1,23 @@
 **/target
 **/refs
 **/out/*.rs
-**/out/*.bin
+*.bin
 *.lock
-**/sniffs
 *.pem
+resource/master/*.json
+
+# TODO: unhardcode
+!rpc.api.System_GetSystemInfo_20260801_135432_783_RESP_0.bin
+!rpc.api.Master_Get_20260801_135434_203_RESP_0.bin
+!rpc.api.Auth_Login_20260801_135434_968_RESP_0.bin
+!rpc.api.User_Get_20260801_135435_258_RESP_0.bin
+!rpc.api.Home_Login_20260801_135514_571_RESP_0.bin
+!rpc.api.MultiGame_ListPingServer_20260801_135515_082_RESP_0.bin
+!rpc.api.Park_Enter_20260801_135516_445_RESP_0.bin
+!rpc.api.Event_ListEventInfo_20260801_135516_668_RESP_0.bin
+!rpc.api.Park_Refresh_20260801_135517_102_RESP_0.bin
+!rpc.api.Notification_List_20260801_135518_347_RESP_0.bin
+!rpc.api.StartupNotification_Read_20260801_135523_266_RESP_0.bin
+!rpc.api.StartupNotification_ReadMusic_20260801_135533_581_RESP_0.bin
+!rpc.api.LoginBonus_Check_20260801_140457_139_RESP_0.bin
+!rpc.api.Gacha_List_20260801_135518_631_RESP_0.bin

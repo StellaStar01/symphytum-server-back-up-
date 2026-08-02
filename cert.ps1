@@ -1,6 +1,18 @@
-$CertDir    = Join-Path $PSScriptRoot "resource\cert"
-$CertFile   = Join-Path $CertDir "cert.pem"
-$KeyFile    = Join-Path $CertDir "key.pem"
+$ConfigPath = Join-Path $PSScriptRoot "config.toml"
+$CertFile   = "resource\cert\cert.pem"
+$KeyFile    = "resource\cert\key.pem"
+
+if (Test-Path $ConfigPath) {
+    $ConfigText = Get-Content $ConfigPath -Raw
+    $CertMatch  = [regex]::Match($ConfigText, 'cert_file_path\s*=\s*"([^"]+)"')
+    $KeyMatch   = [regex]::Match($ConfigText, 'key_file_path\s*=\s*"([^"]+)"')
+    if ($CertMatch.Success) { $CertFile = $CertMatch.Groups[1].Value }
+    if ($KeyMatch.Success)  { $KeyFile  = $KeyMatch.Groups[1].Value }
+}
+
+$CertFile   = Join-Path $PSScriptRoot $CertFile
+$KeyFile    = Join-Path $PSScriptRoot $KeyFile
+$CertDir    = Split-Path $CertFile -Parent
 $CommonName = "127.0.0.1"
 $Days       = 365
 

@@ -1,0 +1,12 @@
+[package]
+name = "inspector"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { workspace = true, features = ["multipart"] }
+tokio.workspace = true
+tracing.workspace = true
+
+resource.workspace = true
+types.workspace = true

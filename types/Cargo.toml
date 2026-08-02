@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 prost.workspace = true
 prost-protovalidate.workspace = true
+prost-reflect.workspace = true
 prost-types.workspace = true
 tonic.workspace = true
 tonic-prost.workspace = true
