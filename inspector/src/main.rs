@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use std::sync::{LazyLock, Mutex};
+use std::sync::LazyLock;
 use std::time::SystemTime;
+
+use parking_lot::Mutex;
 
 use axum::Router;
 use axum::extract::{Multipart, Query};
@@ -34,14 +36,12 @@ struct Sniff {
     name: String,
     size: u64,
     direction: Option<Direction>,
-    // proto route from the file name (e.g. `rpc.api.Auth_Login`);
-    // none if not matching scheme
+    // proto route from the file name (e.g. rpc.api.Auth_Login); none if unmatched.
     route: Option<String>,
     modified: SystemTime,
-    // message type short name (e.g. `AuthLoginResponse`) when the file name
-    // resolves to a service method, else the file name; drives the name sort.
+    // message type short name when the file name resolves to a method, else the file name; drives the sort.
     sort_name: String,
-    /// Ok(pretty) or Err(reason)
+    // Ok(pretty) or Err(reason)
     decoded: Result<String, String>,
     hex: String,
 }
@@ -63,7 +63,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn index() -> Html<String> {
-    let body = render_sniffs();
+    let body = render_sniffs().await;
     Html(
         INDEX_HTML
             .replace("{CSS}", STYLE_CSS)
@@ -73,7 +73,7 @@ async fn index() -> Html<String> {
 }
 
 async fn list() -> Html<String> {
-    Html(render_sniffs())
+    Html(render_sniffs().await)
 }
 
 async fn view(
@@ -86,6 +86,7 @@ async fn view(
         )
     })?;
     let sniff = scan_sniffs()
+        .await
         .into_iter()
         .find(|s| &s.name == name)
         .ok_or_else(|| {
@@ -172,10 +173,9 @@ async fn upload(mut multipart: Multipart) -> Result<Redirect, (StatusCode, Strin
             .await
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-        if let Ok(meta) = std::fs::metadata(&dest) {
+        if let Ok(meta) = tokio::fs::metadata(&dest).await {
             SNIFF_CACHE
                 .lock()
-                .unwrap()
                 .insert(name.clone(), make_sniff(&name, &data, &meta));
         }
         tracing::info!("saved {} ({} bytes)", name, data.len());
@@ -186,13 +186,13 @@ async fn upload(mut multipart: Multipart) -> Result<Redirect, (StatusCode, Strin
 }
 
 async fn full_refresh() -> Html<String> {
-    SNIFF_CACHE.lock().unwrap().clear();
+    SNIFF_CACHE.lock().clear();
     tracing::info!("cache cleared, re-decoding all sniffs");
-    Html(render_sniffs())
+    Html(render_sniffs().await)
 }
 
-fn render_sniffs() -> String {
-    let mut sniffs = scan_sniffs();
+async fn render_sniffs() -> String {
+    let mut sniffs = scan_sniffs().await;
     sniffs.sort_by(|a, b| b.modified.cmp(&a.modified));
     let mut html = String::new();
     for s in sniffs.iter() {
@@ -276,19 +276,26 @@ fn make_sniff(name: &str, bytes: &[u8], meta: &std::fs::Metadata) -> Sniff {
     }
 }
 
-fn scan_sniffs() -> Vec<Sniff> {
-    let mut cache = SNIFF_CACHE.lock().unwrap();
+async fn scan_sniffs() -> Vec<Sniff> {
     let mut seen = HashSet::new();
     let mut out = Vec::new();
     let sniffs_dir = CONFIG.sniffs_dir();
-    let entries = match std::fs::read_dir(&sniffs_dir) {
+    let mut entries = match tokio::fs::read_dir(&sniffs_dir).await {
         Ok(e) => e,
         Err(e) => {
             tracing::warn!("cannot read {}: {e}", sniffs_dir.display());
             return out;
         }
     };
-    for entry in entries.flatten() {
+    loop {
+        let entry = match entries.next_entry().await {
+            Ok(Some(entry)) => entry,
+            Ok(None) => break,
+            Err(e) => {
+                tracing::warn!("read_dir entry: {e}");
+                continue;
+            }
+        };
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) != Some("bin") {
             continue;
@@ -298,7 +305,7 @@ fn scan_sniffs() -> Vec<Sniff> {
             None => continue,
         };
         seen.insert(name.clone());
-        let meta = match entry.metadata() {
+        let meta = match entry.metadata().await {
             Ok(m) => m,
             Err(e) => {
                 tracing::warn!("metadata {name}: {e}");
@@ -309,13 +316,17 @@ fn scan_sniffs() -> Vec<Sniff> {
             meta.modified().unwrap_or(SystemTime::UNIX_EPOCH),
             meta.len(),
         );
-        if let Some(cached) = cache.get(&name) {
+        let cached = {
+            let cache = SNIFF_CACHE.lock();
+            cache.get(&name).cloned()
+        };
+        if let Some(cached) = cached {
             if cached.modified == mtime && cached.size == size {
-                out.push(cached.clone());
+                out.push(cached);
                 continue;
             }
         }
-        let bytes = match std::fs::read(&path) {
+        let bytes = match tokio::fs::read(&path).await {
             Ok(b) => b,
             Err(e) => {
                 tracing::warn!("read {name}: {e}");
@@ -323,16 +334,14 @@ fn scan_sniffs() -> Vec<Sniff> {
             }
         };
         let sniff = make_sniff(&name, &bytes, &meta);
-        cache.insert(name.clone(), sniff.clone());
+        SNIFF_CACHE.lock().insert(name.clone(), sniff.clone());
         out.push(sniff);
     }
-    cache.retain(|name, _| seen.contains(name));
+    SNIFF_CACHE.lock().retain(|name, _| seen.contains(name));
     out
 }
 
-// `<route>_<YYYYMMDD>_<HHMMSS>_<FFF>_<REQ|RESP>_<INDEX>.bin` -> (route, direction).
-// Parsed from the end: last token is the index (digits), previous is REQ|RESP,
-// the three before that are the timestamp. Anything else is rejected.
+// File names are <route>_<YYYYMMDD>_<HHMMSS>_<FFF>_<REQ|RESP>_<INDEX>.bin, parsed from the end; other names are rejected.
 fn parse_name(name: &str) -> Option<(String, Direction)> {
     let stem = name.strip_suffix(".bin")?;
     let parts: Vec<&str> = stem.split('_').collect();
@@ -361,8 +370,7 @@ fn parse_name(name: &str) -> Option<(String, Direction)> {
     Some((route, direction))
 }
 
-// `rpc.api.Auth_Login` + REQ -> the full message name of Auth.Login's input
-// (`rpc.api.AuthLoginRequest`). Tries every `_` split point right-to-left.
+// Try every underscore split point right-to-left to resolve the service method's message name.
 fn resolve(route: &str, direction: Direction) -> Option<String> {
     for i in (0..route.len()).rev() {
         if !route.is_char_boundary(i) || route.as_bytes()[i] != b'_' {

@@ -13,6 +13,11 @@ pub trait MasterTable: Message + Default + Clone + 'static {
     // rows of this table. panics if not loaded yet
     fn table() -> &'static [Self];
 
+    // rows if loaded, else None, for optional master reads that must not panic when never loaded.
+    fn try_table() -> Option<&'static [Self]> {
+        Self::cache().get().map(Vec::as_slice)
+    }
+
     // cache for this table, filled by load() / load_all()
     fn cache() -> &'static ::std::sync::OnceLock<Vec<Self>>;
 }
@@ -68,7 +73,7 @@ fn lang_file_matches(short: &str, file: &str) -> bool {
 }
 
 // load the union of `Lang<Table>_<Locale>.json` rows for one Lang table
-async fn load_lang_split<T: MasterTable>(short: &str) -> Result<Vec<T>, String> {
+async fn load_lang_split<T: MasterTable>(short: &str) -> Result<(), String> {
     let dir = repo_root().join("resource").join("master");
 
     let mut files = Vec::new();
@@ -94,37 +99,43 @@ async fn load_lang_split<T: MasterTable>(short: &str) -> Result<Vec<T>, String> 
     files.sort();
 
     let mut all = Vec::with_capacity(files.len() * 100);
+
     for path in files {
         let bytes = tokio::fs::read(&path)
             .await
             .map_err(|e| format!("cannot read {}: {e}", path.display()))?;
-        let rows = parse::<T>(&bytes).map_err(|e| format!("parse {}: {e}", path.display()))?;
-        all.extend(rows);
+
+        all.extend(parse::<T>(&bytes).map_err(|e| format!("parse {}: {e}", path.display()))?);
     }
 
-    Ok(all)
+    let _ = T::cache().set(all);
+
+    Ok(())
 }
 
-pub async fn load<T: MasterTable>() -> Result<Vec<T>, String> {
-    let (short, _) = names::<T>();
+pub async fn load<T: MasterTable>() -> Result<(), String> {
+    if T::cache().get().is_some() {
+        return Ok(());
+    }
 
+    let (short, _) = names::<T>();
     let path = json_path(short);
 
     let bytes = match tokio::fs::read(&path).await {
-        Ok(b) => b,
+        Ok(bytes) => bytes,
+
         Err(e) if e.kind() == std::io::ErrorKind::NotFound && short.starts_with("Lang") => {
-            // Lang/LangClient are dumped per master table + locale (eg.
-            // LangCard_Jpn.json); load the union of the matching files.
-            let rows = load_lang_split::<T>(short).await?;
-            let _ = T::cache().set(rows.clone());
-            return Ok(rows);
+            // Lang/LangClient are dumped per table + locale (eg. LangCard_Jpn.json).
+            return load_lang_split::<T>(short).await;
         }
+
         Err(e) => return Err(format!("cannot read {}: {e}", path.display())),
     };
 
     let rows = parse::<T>(&bytes).map_err(|e| format!("parse {}: {e}", path.display()))?;
-    let _ = T::cache().set(rows.clone());
-    Ok(rows)
+    let _ = T::cache().set(rows);
+
+    Ok(())
 }
 
 macro_rules! master_tables {
@@ -151,8 +162,7 @@ macro_rules! master_tables {
             let mut loaded = 0usize;
             // tokio::join!()-ing these needs changing recursion limit
             $(
-                let rows = load::<$t>().await?;
-                let _ = <$t as MasterTable>::cache().set(rows);
+                load::<$t>().await?;
                 loaded += 1;
             )*
             Ok(loaded)
@@ -161,6 +171,9 @@ macro_rules! master_tables {
 }
 
 include!(concat!(env!("OUT_DIR"), "/master_tables.rs"));
+
+/// raw Master/Get response captured from the original server; run `bin.ps1 master` to init.
+pub const MASTER_GET_BIN: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/master_get.bin"));
 
 #[cfg(test)]
 mod tests {
@@ -213,5 +226,14 @@ mod tests {
         let n = load_all().await.expect("load_all failed");
         assert!(n >= 200, "load_all loaded only {n} tables");
         assert!(!Card::table().is_empty());
+    }
+
+    #[test]
+    fn master_get_bin_decodes() {
+        use prost::Message;
+        assert!(!MASTER_GET_BIN.is_empty(), "MASTER_GET_BIN not init");
+        let resp = types::rpc::api::MasterGetResponse::decode(MASTER_GET_BIN).expect("decodes");
+        assert!(!resp.version.is_empty());
+        assert!(resp.master_tag_packs.len() > 100);
     }
 }

@@ -3,8 +3,10 @@ use std::sync::LazyLock;
 
 use serde::Deserialize;
 
+pub static CONFIG: LazyLock<Config> = LazyLock::new(Config::load);
+
 #[derive(Debug, Clone, Deserialize)]
-pub struct RpcConfig {
+pub struct RpcServerConfig {
     pub host: String,
     pub port: u16,
 }
@@ -25,6 +27,12 @@ pub struct CertConfig {
     pub key_file_path: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct HttpServerConfig {
+    pub host: String,
+    pub port: u16,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
@@ -32,39 +40,65 @@ pub enum LogLevel {
     Info,
 }
 
-impl LogLevel {
-    pub fn env_filter(self) -> &'static str {
-        match self {
-            LogLevel::Debug => "debug,tonic_debug=debug",
-            LogLevel::Info => "info,tonic_debug=info",
-        }
-    }
-
-    pub fn log_bodies(self) -> bool {
-        matches!(self, LogLevel::Debug)
-    }
+#[derive(Debug, Clone, Deserialize)]
+pub struct LogLevelConfig {
+    #[serde(default)]
+    pub env_filters: Vec<String>,
+    #[serde(default)]
+    pub log_body: bool,
+    #[serde(default)]
+    pub log_header: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct LogConfig {
     #[serde(default = "default_log_level")]
     pub level: LogLevel,
+    #[serde(default = "default_debug_log")]
+    pub debug: LogLevelConfig,
+    #[serde(default = "default_info_log")]
+    pub info: LogLevelConfig,
+}
+
+impl LogConfig {
+    /// The config for the currently selected level.
+    pub fn current(&self) -> &LogLevelConfig {
+        match self.level {
+            LogLevel::Debug => &self.debug,
+            LogLevel::Info => &self.info,
+        }
+    }
+
+    /// The tracing env filter: the selected level's entries joined with ",".
+    pub fn env_filter(&self) -> String {
+        self.current().env_filters.join(",")
+    }
+
+    pub fn log_bodies(&self) -> bool {
+        self.current().log_body
+    }
+
+    pub fn log_headers(&self) -> bool {
+        self.current().log_header
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
-    #[serde(default = "default_rpc")]
-    pub rpc: RpcConfig,
+    #[serde(default = "default_rpc", rename = "rpc-server")]
+    pub rpc_server: RpcServerConfig,
     #[serde(default = "default_inspector")]
     pub inspector: InspectorConfig,
     #[serde(default = "default_cert")]
     pub cert: CertConfig,
     #[serde(default = "default_log")]
     pub log: LogConfig,
+    #[serde(default = "default_http_server", rename = "http-server")]
+    pub http_server: HttpServerConfig,
 }
 
-fn default_rpc() -> RpcConfig {
-    RpcConfig {
+fn default_rpc() -> RpcServerConfig {
+    RpcServerConfig {
         host: "127.0.0.1".into(),
         port: 3000,
     }
@@ -85,14 +119,39 @@ fn default_cert() -> CertConfig {
     }
 }
 
+fn default_http_server() -> HttpServerConfig {
+    HttpServerConfig {
+        host: "127.0.0.1".into(),
+        port: 3010,
+    }
+}
+
 fn default_log() -> LogConfig {
     LogConfig {
         level: default_log_level(),
+        debug: default_debug_log(),
+        info: default_info_log(),
     }
 }
 
 fn default_log_level() -> LogLevel {
     LogLevel::Debug
+}
+
+fn default_debug_log() -> LogLevelConfig {
+    LogLevelConfig {
+        env_filters: vec!["debug".into(), "tonic_debug=debug".into()],
+        log_body: true,
+        log_header: false,
+    }
+}
+
+fn default_info_log() -> LogLevelConfig {
+    LogLevelConfig {
+        env_filters: vec!["info".into(), "tonic_debug=info".into()],
+        log_body: false,
+        log_header: false,
+    }
 }
 
 fn default_cert_file() -> String {
@@ -110,10 +169,11 @@ fn default_sniffs_path() -> String {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            rpc: default_rpc(),
+            rpc_server: default_rpc(),
             inspector: default_inspector(),
             cert: default_cert(),
             log: default_log(),
+            http_server: default_http_server(),
         }
     }
 }
@@ -127,14 +187,14 @@ pub fn repo_root() -> PathBuf {
 
 pub fn init_tracing() {
     let _ = tracing_subscriber::fmt()
-        .with_env_filter(CONFIG.log.level.env_filter())
+        .with_env_filter(CONFIG.log.env_filter())
         .try_init();
 }
 
 pub fn debug_layer() -> tonic_debug::DebugLayer {
     tonic_debug::DebugLayer::new()
-        .log_headers(false)
-        .log_bodies(CONFIG.log.level.log_bodies())
+        .log_headers(CONFIG.log.log_headers())
+        .log_bodies(CONFIG.log.log_bodies())
 }
 
 impl Config {
@@ -176,5 +236,3 @@ impl Config {
         self.absolute(&self.inspector.sniffs_path)
     }
 }
-
-pub static CONFIG: LazyLock<Config> = LazyLock::new(Config::load);

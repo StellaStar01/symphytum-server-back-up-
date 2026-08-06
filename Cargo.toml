@@ -1,18 +1,25 @@
 cargo-features = ["codegen-backend"]
 
 [workspace]
-members = ["inspector", "resource", "rpc", "types"]
+members = ["database", "http-server", "inspector", "resource", "rpc-server", "types"]
 resolver = "3"
 
 [workspace.dependencies]
+prost = "0.14.4"
+prost-protovalidate = { version = "0.6.0", features = ["tonic"] }
+prost-protovalidate-build = "0.6.0"
+prost-reflect = { version = "0.16.5", features = ["serde"] }
+prost-types = "0.14.4"
+tonic = { version = "0.14.6", features = ["tls-ring", "tls-native-roots", "tls-webpki-roots"] }
+tonic-debug = "0.3.0"
+tonic-prost = "0.14.6"
+tonic-prost-build = "0.14.6"
+
 axum = { version = "0.8.9", features = ["multipart"] }
 bytes = "1.12.1"
 http-body = "1.1.0"
 http-body-util = "0.1.4"
-parking_lot = "0.12.5"
-tokio = { version = "1.53.1", features = ["rt", "macros", "net", "time", "fs"] }
-tonic = { version = "0.14.6", features = ["tls-ring"] }
-tonic-debug = "0.3.0"
+reqwest = { version = "0.12", features = ["rustls-tls"] }
 tower = "0.5.3"
 
 aes = "0.9.2"
@@ -21,21 +28,20 @@ flate2 = "1.1.9"
 md-5 = "0.11.0"
 rand = "0.10.2"
 
-prost = "0.14.4"
-prost-protovalidate = { version = "0.6.0", features = ["tonic"] }
-prost-protovalidate-build = "0.6.0"
-prost-reflect = { version = "0.16.5", features = ["serde"] }
-prost-types = "0.14.4"
-tonic-prost = "0.14.6"
-tonic-prost-build = "0.14.6"
+sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "macros", "migrate"] }
 
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
 toml = "0.8.19"
 
+tokio = { version = "1.53.1", features = ["rt", "macros", "net", "time", "fs"] }
+
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
+parking_lot = "0.12.5"
+
+database = { path = "./database" }
 resource = { path = "./resource" }
 types = { path = "./types" }
 

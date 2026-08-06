@@ -5,9 +5,25 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $Target -or ($Target -ne "rpc" -and $Target -ne "inspector")) {
-    Write-Host "usage: .\bin.ps1 <rpc|inspector> [-r]"
+$Bins = @{
+    "http"      = "http-server"
+    "rpc"       = "rpc-server"
+    "inspector" = "inspector"
+    "master"    = "update_master"
+}
+
+if (-not $Target -or -not $Bins.ContainsKey($Target)) {
+    Write-Host "usage: ./bin <http|rpc|master|inspector> [-r]"
     exit 1
+}
+
+if ($Target -eq "master") {
+    $cargoArgs = @("run", "-p", "resource", "--bin", "update_master")
+    if ($r) {
+        $cargoArgs += "--release"
+    }
+    & cargo @cargoArgs
+    exit $LASTEXITCODE
 }
 
 $ConfigPath = Join-Path $PSScriptRoot "config.toml"
@@ -16,7 +32,6 @@ if (Test-Path $ConfigPath) {
     $Text = Get-Content $ConfigPath -Raw
     $Text = $Text -replace '(?m)^([ \t]*level[ \t]*=[ \t]*")[^"]*(")', ('${1}' + $Level + '${2}')
     Set-Content -Path $ConfigPath -Value $Text -NoNewline
-    # Write-Host "log level set to $Level in config.toml"
 }
 else {
     Write-Warning "config.toml not found; leaving log level untouched"
@@ -25,7 +40,7 @@ else {
 $cargoArgs = @(
     "run"
     "--bin"
-    $Target
+    $Bins[$Target]
 )
 
 if ($r) {

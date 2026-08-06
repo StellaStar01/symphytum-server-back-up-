@@ -63,8 +63,18 @@ fn main() {
     );
 
     let out_dir = env::var("OUT_DIR").expect("OUT_DIR");
-    fs::write(PathBuf::from(out_dir).join("master_tables.rs"), out)
+    fs::write(PathBuf::from(&out_dir).join("master_tables.rs"), out)
         .expect("write master_tables.rs");
+
+    // copy the dumped Master/Get response (raw protobuf) into OUT_DIR so the
+    // lib can embed it; an empty file when no dump exists yet.
+    let src = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"))
+        .join("master")
+        .join("master_get.bin");
+    let dst = PathBuf::from(&out_dir).join("master_get.bin");
+    let bytes = fs::read(&src).unwrap_or_default();
+    fs::write(&dst, bytes).expect("write master_get.bin");
+    println!("cargo::rerun-if-changed={}", src.display());
 }
 
 fn find_matching_brace(s: &str) -> Option<usize> {

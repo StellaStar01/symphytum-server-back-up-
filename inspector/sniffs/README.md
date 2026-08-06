@@ -2,17 +2,17 @@ put your (decrypted) packet binaries here!
 
 then you can run `bin.ps1 inspector`
 
-you can get them by disabling cert pin in the game and then use mitmproxy with this script:
+you can get them by disabling cert pin in the game and then use mitmproxy with a script like this:
 
 ```python
 
 """
-mitmproxy addon: hololive-grpc-decrypt.py
-
 Decrypts the game's encrypted gRPC payloads and saves decrypted protobuf
 messages to:
 
     log/<ROUTE>_<TIMESTAMP>_<REQ|RESP>_<INDEX>.bin
+
+Example usage: mitmweb --mode local:hololive-Dreams.exe -s <this_script_file_name>
 """
 
 import hashlib

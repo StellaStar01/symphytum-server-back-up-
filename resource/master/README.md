@@ -1,1 +1,1 @@
-extract the master.min.zip content here!
+run bin.ps1 master

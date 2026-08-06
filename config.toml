@@ -1,4 +1,4 @@
-[rpc]
+[rpc-server]
 host = "127.0.0.1"
 port = 3000
 
@@ -7,6 +7,10 @@ host = "127.0.0.1"
 port = 3001
 sniffs_path = "inspector/sniffs"
 
+[http-server]
+host = "127.0.0.1"
+port = 3010
+
 [cert]
 cert_file_path = "resource/cert/cert.pem"
 key_file_path = "resource/cert/key.pem"
@@ -14,3 +18,13 @@ key_file_path = "resource/cert/key.pem"
 [log]
 # info | debug
 level = "debug"
+
+[log.debug]
+env_filters = ["info", "tonic_debug=debug", "sqlx=warn"]
+log_body = false
+log_header = true
+
+[log.info]
+env_filters = ["info", "tonic_debug=info", "sqlx=off"]
+log_body = false
+log_header = false

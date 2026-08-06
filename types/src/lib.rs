@@ -1,5 +1,7 @@
 #![allow(unused_comparisons)]
 
+pub use prost_protovalidate::Validate;
+
 pub mod reflection;
 
 pub mod common {
