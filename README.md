@@ -117,6 +117,8 @@ hololive Dreams private server
 
 - **OpenSSL**: https://slproweb.com/products/Win32OpenSSL.html. Make sure openssl is in path env.
 
+- **protoc**: https://github.com/protocolbuffers/protobuf/releases/download/v35.1/protoc-35.1-win64.zip extract and be sure to put it in PATH environment variable
+
 </details>
 
 -- --
